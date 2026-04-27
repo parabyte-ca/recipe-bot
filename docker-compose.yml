@@ -1,0 +1,62 @@
+services:
+
+  # ── MySQL ────────────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: recipe-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-wordpress}
+      MYSQL_USER: ${DB_USER:-wordpress}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── WordPress ────────────────────────────────────────────────────────────────
+  wordpress:
+    image: wordpress:6.7-php8.3-apache
+    container_name: recipe-wordpress
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8083:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${DB_NAME:-wordpress}
+      WORDPRESS_DB_USER: ${DB_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_TABLE_PREFIX: wp_
+    volumes:
+      - wp_data:/var/www/html
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/wp-login.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── recipe-bot ───────────────────────────────────────────────────────────────
+  recipe-bot:
+    build: .
+    container_name: recipe-bot
+    restart: unless-stopped
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      WP_URL: http://wordpress
+    volumes:
+      - ${INPUT_HOST_DIR:-/mnt/shared_vol/home/amoote/recipe-bot/input}:/data/input
+      - ${OUTPUT_HOST_DIR:-/mnt/shared_vol/home/amoote/recipe-bot/output}:/data/output
+
+volumes:
+  db_data:
+  wp_data:
