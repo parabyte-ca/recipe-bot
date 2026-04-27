@@ -5,8 +5,8 @@ PROJECT="recipe-bot"
 VERSION=$(cat VERSION || echo "1.0.0")
 PORT=8181
 CONTAINER_NAME=recipe-bot
-INPUT_DIR="/mnt/shared_vol/recipe-bot/input"
-OUTPUT_DIR="/mnt/shared_vol/recipe-bot/output"
+INPUT_DIR="/mnt/shared_vol/home/amoote/recipe-bot/input"
+OUTPUT_DIR="/mnt/shared_vol/home/amoote/recipe-bot/output"
 
 echo "Setting up $PROJECT v$VERSION..."
 
